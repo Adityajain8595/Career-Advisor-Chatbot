@@ -34,7 +34,7 @@ function saveSessions(sessions) {
 }
 
 export default function ChatApp({
-  backendUrl = import.meta.env.VITE_BACKEND_URL || "https://backend-api-67ei.onrender.com/",
+  backendUrl = import.meta.env.VITE_BACKEND_URL || "https://backend-api-67ei.onrender.com",
 }) {
   const [sessions, setSessions] = useState(loadSessions());
   const [currentSession, setCurrentSession] = useState(
@@ -58,6 +58,22 @@ export default function ChatApp({
       return updated;
     });
   };
+
+  useEffect(() => {
+    if (!currentSession) return;
+    const loadHistory = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/history?session_id=${currentSession}`);
+        const data = await res.json();
+        if (data.chat_history && Array.isArray(data.chat_history)) {
+          setCurrentMessages(data.chat_history);
+        }
+      } catch (err) {
+        console.error("Error loading chat history:", err);
+      }
+    };
+    loadHistory();
+  }, [currentSession]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
