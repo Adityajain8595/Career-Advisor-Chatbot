@@ -1,0 +1,9 @@
+langchain
+python-dotenv
+langchain_community
+langchain_core
+python-multipart
+fastapi
+uvicorn
+google-cloud-aiplatform 
+langchain-google-vertexai
