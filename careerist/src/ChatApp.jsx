@@ -207,6 +207,29 @@ export default function ChatApp({
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-gray-50">
+      <style>
+        {`
+          @media (max-width: 768px) {
+            .flex-col-container {
+              flex-direction: column;
+            }
+            .main-content {
+              flex-grow: 1;
+              overflow-y: auto;
+              padding-bottom: 7rem;
+            }
+            .input-form {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              padding: 1rem;
+              background-color: white;
+              z-index: 10;
+            }
+          }
+        `}
+      </style>
       {/* Sidebar */}
       <aside className={`bg-slate-700 text-white border-r flex-col transition-all duration-300 ${isSidebarCollapsed ? 'w-16' : 'w-64 flex'}`}>
         <div className="p-3 font-semibold border-b border-slate-600 text-black bg-slate-200 flex justify-between items-center">
@@ -290,7 +313,7 @@ export default function ChatApp({
       </aside>
 
       {/* Chat main */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col flex-col-container">
         <header className="bg-gradient-to-r from-indigo-600 to-blue-500 p-4 text-white shadow-md">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="text-xl font-semibold">Careerist — AI Career Advisor</div>
@@ -302,19 +325,19 @@ export default function ChatApp({
           </div>
         </header>
 
-        <main className="flex-1 p-4 flex flex-col overflow-hidden">
+        <main className="flex-1 p-4 flex flex-col overflow-hidden main-content">
           <div className="flex-1 overflow-auto p-6 bg-white rounded-2xl shadow-sm">
             {currentMessages.length === 0 && (
               <div className="text-center text-slate-500 py-12">
+                  <img src="/careerist_logo.png" alt="Careerist Logo" className="mx-auto mb-4 w-12 h-12" />
                 <div className="text-lg font-medium mb-2" style={{ fontSize: '30px' }}>
                   Your Buddy for Career Guidance
                 </div>
-                <div className="text-lg font-medium mb-2 text-cyan-600 font-bold" style={{ fontSize: '6px' }}>
+                <div className="text-lg font-medium mb-2 text-cyan-600 font-bold" style={{ fontSize: '10px' }}>
                   Powered by Gemini 2.5-Flash
                 </div>
                 <div className="text-sm">
-                  Feel free to ask questions regarding jobs, careers, skills and
-                  related topics.
+                  Feel free to ask questions regarding jobs, careers, skills andrelated topics.
                 </div>
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-2xl mx-auto">
                   <button onClick={() => handleSampleQueryClick("What are the key skills for an AI Engineer?")} className="bg-slate-100 p-4 rounded-xl text-slate-700 hover:bg-slate-200 transition-colors">
@@ -382,12 +405,12 @@ export default function ChatApp({
                 </div>
               )}
               <div ref={endRef} />
-            </div>
-          </div>
+            </div>
+          </div>
 
           <form
             onSubmit={sendMessage}
-            className="mt-4 p-3 bg-white rounded-xl shadow-md flex items-end gap-2"
+            className="mt-4 p-3 bg-white rounded-xl shadow-md flex items-end gap-2 input-form"
           >
             <textarea
               ref={textareaRef}
