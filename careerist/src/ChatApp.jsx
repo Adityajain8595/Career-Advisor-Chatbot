@@ -12,176 +12,184 @@ const loadingPhrases = [
 ];
 
 function loadSessions() {
-  try {
-    const raw = localStorage.getItem("careerist_sessions");
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (s) =>
-        s &&
-        typeof s.id === "string" &&
-        typeof s.title === "string" &&
-        Array.isArray(s.messages)
-    );
-  } catch {
-    localStorage.removeItem("careerist_sessions");
-    return [];
-  }
+  try {
+    const raw = localStorage.getItem("careerist_sessions");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (s) =>
+        s &&
+        typeof s.id === "string" &&
+        typeof s.title === "string" &&
+        Array.isArray(s.messages)
+    );
+  } catch {
+    localStorage.removeItem("careerist_sessions");
+    return [];
+  }
 }
 function saveSessions(sessions) {
-  localStorage.setItem("careerist_sessions", JSON.stringify(sessions));
+  localStorage.setItem("careerist_sessions", JSON.stringify(sessions));
 }
 
 export default function ChatApp({
-  backendUrl = import.meta.env.VITE_BACKEND_URL || "https://backend-api-67ei.onrender.com",
+  backendUrl = import.meta.env.VITE_BACKEND_URL || "https://backend-api-67ei.onrender.com",
 }) {
-  const [sessions, setSessions] = useState(loadSessions());
-  const [currentSession, setCurrentSession] = useState(
-    sessions.length > 0 ? sessions[0].id : null
-  );
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingPhrase, setLoadingPhrase] = useState(loadingPhrases[0]);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Added state for sidebar
-  const endRef = useRef(null);
-  const textareaRef = useRef(null);
+  const [sessions, setSessions] = useState(loadSessions());
+  const [currentSession, setCurrentSession] = useState(
+    sessions.length > 0 ? sessions[0].id : null
+  );
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingPhrase, setLoadingPhrase] = useState(loadingPhrases[0]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const endRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  const currentMessages =
-    sessions.find((s) => s.id === currentSession)?.messages || [];
+  const currentMessages =
+    sessions.find((s) => s.id === currentSession)?.messages || [];
 
-  const setCurrentMessages = (msgs) => {
-    if (!currentSession) return;
-    setSessions((prev) => {
-      const updated = prev.map((s) =>
-        s.id === currentSession ? { ...s, messages: msgs } : s
-      );
-      saveSessions(updated);
-      return updated;
-    });
-  };
+  const setCurrentMessages = (msgs) => {
+    if (!currentSession) return;
+    setSessions((prev) => {
+      const updated = prev.map((s) =>
+        s.id === currentSession ? { ...s, messages: msgs } : s
+      );
+      saveSessions(updated);
+      return updated;
+    });
+  };
 
-  useEffect(() => {
-    if (!currentSession) return;
-    const loadHistory = async () => {
-      try {
-        const res = await fetch(`${backendUrl}/history?session_id=${currentSession}`);
-        const data = await res.json();
-        if (data.chat_history && Array.isArray(data.chat_history)) {
-          setCurrentMessages(data.chat_history);
-        }
-      } catch (err) {
-        console.error("Error loading chat history:", err);
-      }
-    };
-    loadHistory();
-  }, [currentSession]);
+  // ✅ FIX 1: Preserve session title while updating history
+  useEffect(() => {
+    if (!currentSession) return;
+    const loadHistory = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/history?session_id=${currentSession}`);
+        const data = await res.json();
+        if (data.chat_history && Array.isArray(data.chat_history)) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === currentSession
+                ? { ...s, messages: data.chat_history } // keep title intact
+                : s
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Error loading chat history:", err);
+      }
+    };
+    loadHistory();
+  }, [currentSession]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [currentMessages]);
 
-  useEffect(() => {
-    if (loading) {
-      const interval = setInterval(() => {
-        setLoadingPhrase(
-          (prevPhrase) =>
-            loadingPhrases[
-              (loadingPhrases.indexOf(prevPhrase) + 1) % loadingPhrases.length
-            ]
-        );
-      }, 1500); 
-      return () => clearInterval(interval);
-    }
-  }, [loading]);
+  useEffect(() => {
+    if (loading) {
+      const interval = setInterval(() => {
+        setLoadingPhrase(
+          (prevPhrase) =>
+            loadingPhrases[
+              (loadingPhrases.indexOf(prevPhrase) + 1) % loadingPhrases.length
+            ]
+        );
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
 
+  const sendMessage = async (e, sampleQuery = null) => {
+    if (e) e.preventDefault();
+    const messageToSend = sampleQuery || query;
+    if (!messageToSend.trim()) return;
 
-const sendMessage = async (e, sampleQuery = null) => {
-    if (e) e.preventDefault();
-    const messageToSend = sampleQuery || query;
-    if (!messageToSend.trim()) return;
+    let activeSession = currentSession;
 
-    let activeSession = currentSession;
-    let isNewChat = false;
+    if (!activeSession) {
+      const newSession = {
+        id:
+          "sess_" +
+          Date.now().toString(36) +
+          Math.random().toString(36).slice(2, 10),
+        title: "New Chat", // temporary title
+        messages: [],
+      };
+      activeSession = newSession.id;
+      setSessions((prev) => {
+        const updated = [newSession, ...prev];
+        saveSessions(updated);
+        return updated;
+      });
+      setCurrentSession(newSession.id);
+    }
 
-    if (!activeSession) {
-      const newSession = {
-        id:
-          "sess_" +
-          Date.now().toString(36) +
-          Math.random().toString(36).slice(2, 10),
-        title: messageToSend.slice(0, 50), 
-        messages: [],
-      };
-      activeSession = newSession.id;
-      setSessions((prev) => {
-        const updated = [newSession, ...prev];
-        saveSessions(updated);
-        return updated;
-      });
-      setCurrentSession(newSession.id);
-      isNewChat = true;
-    }
+    const userMsg = { role: "human", content: messageToSend };
 
-    const userMsg = { role: "human", content: messageToSend };
-    
-    setSessions((prev) => {
-      const updated = prev.map((s) =>
-        s.id === activeSession ? { ...s, messages: [...s.messages, userMsg] } : s
-      );
-      saveSessions(updated);
-      return updated;
-    });
+    setSessions((prev) => {
+      const updated = prev.map((s) => {
+        if (s.id === activeSession) {
+          // ✅ FIX 2: Rename "New Chat" to first query
+          const newTitle = s.title === "New Chat" ? messageToSend.slice(0, 50) : s.title;
+          return { ...s, title: newTitle, messages: [...s.messages, userMsg] };
+        }
+        return s;
+      });
+      saveSessions(updated);
+      return updated;
+    });
 
-    setLoading(true);
+    setLoading(true);
 
-    try {
-      const formData = new FormData();
-      formData.append("query", messageToSend);
-      formData.append("session_id", activeSession);
+    try {
+      const formData = new FormData();
+      formData.append("query", messageToSend);
+      formData.append("session_id", activeSession);
 
-      const res = await fetch(`${backendUrl}/ask`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Backend error");
-      const data = await res.json();
+      const res = await fetch(`${backendUrl}/ask`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Backend error");
+      const data = await res.json();
 
-      const aiMsg = { role: "ai", content: data.answer || "(no answer)" };
-      
-      setSessions((prev) => {
-        const updated = prev.map((s) => {
-          if (s.id === activeSession) {
-            return {
-              ...s,
-              messages: [...s.messages, aiMsg],
-            };
-          }
-          return s;
-        });
-        saveSessions(updated);
-        return updated;
-      });
+      const aiMsg = { role: "ai", content: data.answer || "(no answer)" };
 
-    } catch (err) {
-      console.error(err);
-      setSessions((prev) => {
-        const updated = prev.map((s) =>
-          s.id === activeSession
-            ? { ...s, messages: [...s.messages, { role: "ai", content: "⚠️ Error contacting backend." }] }
-            : s
-        );
-        saveSessions(updated);
-        return updated;
-      });
-    }
+      setSessions((prev) => {
+        const updated = prev.map((s) => {
+          if (s.id === activeSession) {
+            return {
+              ...s,
+              messages: [...s.messages, aiMsg],
+            };
+          }
+          return s;
+        });
+        saveSessions(updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error(err);
+      setSessions((prev) => {
+        const updated = prev.map((s) =>
+          s.id === activeSession
+            ? { ...s, messages: [...s.messages, { role: "ai", content: "⚠️ Error contacting backend." }] }
+            : s
+        );
+        saveSessions(updated);
+        return updated;
+      });
+    }
 
-    setQuery("");
-    setLoading(false);
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
-  };
+    setQuery("");
+    setLoading(false);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  };
 
   const clearChats = () => {
     localStorage.removeItem("careerist_sessions");
