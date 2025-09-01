@@ -95,20 +95,22 @@ export default function ChatApp({
     }
   }, [loading]);
 
-  const sendMessage = async (e, sampleQuery = null) => {
+
+const sendMessage = async (e, sampleQuery = null) => {
     if (e) e.preventDefault();
     const messageToSend = sampleQuery || query;
     if (!messageToSend.trim()) return;
 
     let activeSession = currentSession;
     let isNewChat = false;
+
     if (!activeSession) {
       const newSession = {
         id:
           "sess_" +
           Date.now().toString(36) +
           Math.random().toString(36).slice(2, 10),
-        title: "New Chat",
+        title: messageToSend.slice(0, 50), 
         messages: [],
       };
       activeSession = newSession.id;
@@ -121,7 +123,6 @@ export default function ChatApp({
       isNewChat = true;
     }
 
-    // Add the user's message to the state right away for instant feedback
     const userMsg = { role: "human", content: messageToSend };
     
     setSessions((prev) => {
@@ -151,10 +152,8 @@ export default function ChatApp({
       setSessions((prev) => {
         const updated = prev.map((s) => {
           if (s.id === activeSession) {
-            // Find the session and append both the user and AI messages.
             return {
               ...s,
-              title: isNewChat ? messageToSend.slice(0, 50) : s.title,
               messages: [...s.messages, aiMsg],
             };
           }
@@ -179,7 +178,6 @@ export default function ChatApp({
 
     setQuery("");
     setLoading(false);
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -333,7 +331,7 @@ export default function ChatApp({
                 <div className="text-lg font-medium mb-2" style={{ fontSize: '30px' }}>
                   Your Buddy for Career Guidance
                 </div>
-                <div className="text-lg font-medium mb-2 text-cyan-600 font-bold" style={{ fontSize: '10px' }}>
+                <div className="text-lg font-medium mb-2 text-cyan-600 font-bold" style={{ fontSize: '15px' }}>
                   Powered by Gemini 2.5-Flash
                 </div>
                 <div className="text-sm">
