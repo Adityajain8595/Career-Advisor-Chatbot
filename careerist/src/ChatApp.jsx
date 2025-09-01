@@ -329,7 +329,7 @@ export default function ChatApp({
           <div className="flex-1 overflow-auto p-6 bg-white rounded-2xl shadow-sm">
             {currentMessages.length === 0 && (
               <div className="text-center text-slate-500 py-12">
-                  <img src="/careerist_logo.png" alt="Careerist Logo" className="mx-auto mb-4 w-12 h-12" />
+                  <img src="/careerist_logo.png" alt="Careerist Logo" className="mx-auto mb-4 w-40 h-40" />
                 <div className="text-lg font-medium mb-2" style={{ fontSize: '30px' }}>
                   Your Buddy for Career Guidance
                 </div>
