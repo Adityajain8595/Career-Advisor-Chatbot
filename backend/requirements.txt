@@ -6,5 +6,4 @@ python-multipart
 fastapi
 uvicorn
 google-cloud-aiplatform 
-google-cloud-texttospeech
 langchain-google-vertexai
