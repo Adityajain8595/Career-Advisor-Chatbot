@@ -8,7 +8,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 @app.get("/")
 def root():
-    return {"message": "Careerify Chatbot Backend Running"}
+    return {"message": "Careerist Chatbot Backend Running"}
 
 @app.get("/history")
 def get_history(session_id: str = "default_session"):
